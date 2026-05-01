@@ -32,7 +32,7 @@ const pageData: any = reactive({
     {
       type: "select",
       label: "类型",
-      prop: "level",
+      prop: "type",
       placeholder: "请选择类型",
       dataSourceKey: "teamRewardTypeOption",
       options: {
@@ -84,13 +84,11 @@ const pageData: any = reactive({
         label: "层级",
         prop: "level",
         minWidth: "120px",
-        slot: "levelScope"
       },
       {
         label: "数量",
         prop: "amount",
-        minWidth: "120px",
-        slot: "usdtScope"
+        minWidth: "120px"
       },
       {
         label: "类型",
@@ -161,7 +159,7 @@ const _loadData = (page?: number) => {
     .queryTotal(query)
     .then((res: any) => {
       if (res.code === 200) {
-        pageData.totalAmount = res.pid || 0;
+        pageData.totalAmount = res.data || 0;
       } else {
         message.warning(res.msg);
       }
@@ -244,7 +242,7 @@ onMounted(() => _loadData());
         <span>{{ levelConvert(scope.row[scope.column.property]) }}</span>
       </template>
       <template #typeScope="scope">
-        <span>{{ typeConvert(scope.row[scope.column.property]) }}</span>
+        <span>{{ teamRewardTypeConvert(scope.row[scope.column.property]) }}</span>
       </template>
       
       <template #usdtScope="scope">

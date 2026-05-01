@@ -50,12 +50,14 @@ export const enableBooleanMap: SelectOptionMap<boolean> = {
 };
 export const teamRewardTypeMap: SelectOptionMap<number> = {
   1: "邀请奖励",
-  2: "治理奖励"
+  2: "治理奖励",
+  3: "平级奖励"
 };
 export const teamRewardTypeOption: SelectOption<number>[] = [
   { label: "全部", value: "null" },
   { label: "邀请奖励", value: 1 },
-  { label: "治理奖励", value: 2 }
+  { label: "治理奖励", value: 2 },
+  { label: "平级奖励", value: 3 },
 ];
 export const ifEnableOptions: SelectOption<boolean>[] = [
   { label: "启用", value: true },

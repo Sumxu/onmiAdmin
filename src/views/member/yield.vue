@@ -74,15 +74,9 @@ const pageData: any = reactive({
         width: "370px"
       },
       {
-        label: "质押ID",
-        prop: "depositId",
-        minWidth: "120px"
-      },
-      {
         label: "数量",
         prop: "amount",
-        minWidth: "120px",
-        slot: "usdtScope"
+        minWidth: "120px"
       },
       {
         label: "创建时间",
