@@ -127,23 +127,22 @@ export const levelOptions: SelectOption<number>[] = [
 ];
 export const userSetLevelOptions: SelectOption<number>[] = [
   { label: "无", value: 0 },
-  { label: "F1", value: 1 },
-  { label: "F2", value: 2 },
-  { label: "F3", value: 3 },
-  { label: "F4", value: 4 },
-  { label: "F5", value: 5 },
-  { label: "F6", value: 6 },
-  { label: "F7", value: 7 }
+  { label: "V1", value: 1 },
+  { label: "V2", value: 2 },
+  { label: "V3", value: 3 },
+  { label: "V4", value: 4 },
+  { label: "V5", value: 5 },
+  { label: "V6", value: 6 },
+  { label: "V7", value: 7 }
 ];
 export const userLevelOptions: SelectOption<number>[] = [
   { label: "无", value: 0 },
-  { label: "F1", value: 1 },
-  { label: "F2", value: 2 },
-  { label: "F3", value: 3 },
-  { label: "F4", value: 4 },
-  { label: "F5", value: 5 },
-  { label: "F6", value: 6 },
-  { label: "F7", value: 7 }
+  { label: "V1", value: 1 },
+  { label: "V2", value: 2 },
+  { label: "V3", value: 3 },
+  { label: "V4", value: 4 },
+  { label: "V5", value: 5 },
+  { label: "V6", value: 6 }
 ];
 export const userTypeOptions: SelectOption<number>[] = [
   { label: "全部", value: "null" },
@@ -200,6 +199,12 @@ export const pidMap: SelectOptionMap<string> = {
   2: "进取3号量化策略"
 };
 export const pidOptions: SelectOption<number>[] = [
+  { label: "全部", value: 'null' },
+  { label: "稳赢1号量化策略", value: 0 },
+  { label: "增益2号量化策略", value: 1 },
+  { label: "进取3号量化策略", value: 2 }
+];
+export const pidSetOptions: SelectOption<number>[] = [
   { label: "稳赢1号量化策略", value: 0 },
   { label: "增益2号量化策略", value: 1 },
   { label: "进取3号量化策略", value: 2 }
@@ -210,12 +215,12 @@ export const pledgeTypeOptions: SelectOption<number>[] = [
 ];
 export const userlevelMap: SelectOptionMap<string> = {
   0: "无",
-  1: "F1",
-  2: "F2",
-  3: "F3",
-  4: "F4",
-  5: "F5",
-  6: "F6"
+  1: "V1",
+  2: "V2",
+  3: "V3",
+  4: "V4",
+  5: "V5",
+  6: "V6"
 };
 export const levelMap: SelectOptionMap<string> = {
   0: "无",

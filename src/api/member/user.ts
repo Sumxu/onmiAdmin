@@ -23,6 +23,14 @@ export function upStatus<T>(data?: any): Promise<Result<T>> {
 export function upLevel<T>(data?: any): Promise<Result<T>> {
   return get("/member/user/updateLevel", data);
 }
+/**
+ * 修改等级
+ * @param query .
+ * @returns
+ */
+export function upLeader<T>(data?: any): Promise<Result<T>> {
+  return get("/member/user/updateLeader", data);
+}
 //导出
 export function exportXlsx<T>(data?: any): Promise<Result<T>> {
   return post("/member/user/export", data, {

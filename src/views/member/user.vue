@@ -5,6 +5,7 @@ import TableButtons from "@/components/opts/btns2.vue";
 import { PureTable } from "@pureadmin/table";
 import * as $Api from "@/api/member/user";
 import message from "@/utils/message";
+import { useNFTMulticall } from "@/utils/useNFTMulticall";
 import {
   formatAddress,
   formatDate,
@@ -18,7 +19,9 @@ import {
   userTypeMap,
   userTypeOptions,
   amountOptions,
-  userSetLevelOptions
+  userSetLevelOptions,
+  pledgeTypeOptions,
+  pidSetOptions
 } from "@/constants/constants";
 import {
   userlevelConvert,
@@ -30,11 +33,15 @@ import {
   ElSelect,
   ElOption,
   ElInput,
-  ElMessage
+  ElMessage,
+  ElRadioGroup,
+  ElRadio,
+  ElSwitch
 } from "element-plus";
-import erc20Abi from "@/abi/erc20-abi";
+import omniABI from "@/abi/omniABI.ts";
 import { contractAddress } from "@/config/contract";
 import { downloadExcel } from "@/utils/downloadExcel";
+const { fetch } = useNFTMulticall();
 const pageData: any = reactive({
   searchState: true,
   searchForm: {},
@@ -55,15 +62,6 @@ const pageData: any = reactive({
       placeholder: "请输入上级地址"
     },
     {
-      type: "date",
-      dateType: "datetimerange",
-      label: "日期范围",
-      prop: "dates",
-      placeholder: "请输入日期范围",
-      startPlaceholder: "请输入开始日期范围",
-      endPlaceholder: "请输入结束日期范围"
-    },
-    {
       type: "select",
       label: "用户等级",
       prop: "level",
@@ -77,12 +75,28 @@ const pageData: any = reactive({
           label: "label"
         }
       }
+    },
+    {
+      type: "radio",
+      label: "类型",
+      prop: "queryType",
+      default: 1,
+      dataSourceKey: "pledgeTypeOptions",
+      options: {
+        filterable: true,
+        keys: {
+          prop: "prop",
+          value: "value",
+          label: "label"
+        }
+      }
     }
   ],
   dataSource: {
     levelOptions: levelOptions,
     userLevelOptions: userLevelOptions,
-    userTypeOptions: userTypeOptions
+    userTypeOptions: userTypeOptions,
+    pledgeTypeOptions: pledgeTypeOptions
   },
   permission: {
     query: ["defi:user:page"]
@@ -114,11 +128,11 @@ const pageData: any = reactive({
         prop: "parentAddress",
         width: "370px"
       },
-      { label: "当前等级", prop: "level", width: "100px",slot:"levelScope" },
+      { label: "当前等级", prop: "level", width: "100px", slot: "levelScope" },
       { label: "状态", prop: "status", width: "210px", slot: "statusScope" },
       {
         label: "用户投入",
-        prop: "myPerf",
+        prop: "selfPerf",
         slot: "myPerfScope",
         width: "140px"
       },
@@ -155,22 +169,13 @@ const pageData: any = reactive({
         width: "140px"
       },
       {
-        label: "有效直推人数",
-        prop: "directValidCount",
-        width: "160px"
-      },
-      {
         label: "是否参与",
         prop: "isJoin",
-        width: "100px"
-      },
-      {
-        label: "是否特殊",
-        prop: "special",
-        width: "100px"
+        width: "100px",
+        slot: "isJoinScope"
       },
       { label: "注册时间", prop: "createTime", width: "180px" },
-      { label: "操作", fixed: "right", slot: "operation", width: "220px" }
+      { label: "操作", fixed: "right", slot: "operation", width: "320px" }
     ],
     list: [],
     loading: false,
@@ -275,6 +280,345 @@ const handleUpdateLevel = (row: any) => {
     }
   });
 };
+const handleUpdateLeader = (row: any) => {
+  const currentAddress = ref<string>(row.address || "");
+  const newParentAddress = ref<string>(""); // 新上级地址
+
+  ElMessageBox({
+    title: "修改上级",
+    customClass: "my-message-box",
+    message: () =>
+      h(
+        "div",
+        {
+          style: {
+            width: "530px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px"
+          }
+        },
+        [
+          // 当前用户地址（禁用）
+          h("div", { style: "display: flex; align-items: center; gap: 8px;" }, [
+            h(
+              "span",
+              {
+                style: "white-space: nowrap; font-weight: 500; min-width: 80px;"
+              },
+              "当前地址"
+            ),
+            h(ElInput, {
+              modelValue: currentAddress.value,
+              disabled: true,
+              style: { width: "390px" },
+              placeholder: "当前用户地址"
+            })
+          ]),
+
+          // 新上级地址（可编辑）
+          h("div", { style: "display: flex; align-items: center; gap: 8px;" }, [
+            h(
+              "span",
+              {
+                style: "white-space: nowrap; font-weight: 500; min-width: 80px;"
+              },
+              "新上级地址"
+            ),
+            h(ElInput, {
+              style: { width: "390px" },
+              modelValue: newParentAddress.value,
+              "onUpdate:modelValue": (val: string) => {
+                newParentAddress.value = val;
+              },
+              placeholder: "请输入新的上级地址",
+              clearable: true
+            })
+          ])
+        ]
+      ),
+
+    showCancelButton: true,
+
+    beforeClose: async (action, instance, done) => {
+      if (action === "confirm") {
+        // 简单校验
+        if (!newParentAddress.value || newParentAddress.value.trim() === "") {
+          message.warning("请输入新上级地址");
+          return;
+        }
+
+        try {
+          instance.confirmButtonLoading = true;
+
+          const res = await $Api.upLeader({
+            address: currentAddress.value, // 当前用户地址
+            newParentAddress: newParentAddress.value.trim() // 新上级地址
+          });
+
+          if (res.code === 200) {
+            message.success(res.msg || "修改上级成功");
+            _loadData(); // 刷新列表
+            done();
+          } else {
+            message.warning(res.msg || "修改失败");
+          }
+        } catch (err: any) {
+          console.error("upLeader error:", err);
+          message.error(err?.message || "请求失败");
+        } finally {
+          instance.confirmButtonLoading = false;
+        }
+      } else {
+        done();
+      }
+    }
+  });
+};
+const handleUpdateStatus = (row: any) => {
+  const isBlack = ref<boolean>(row.status); // 是否拉黑
+  const updateChildren = ref<boolean>(false); // 是否同时修改伞下用户
+  const address = row.address;
+  ElMessageBox({
+    title: "修改用户状态",
+    message: () =>
+      h(
+        "div",
+        {
+          style:
+            "width: 320px; display: flex; flex-direction: column; gap: 20px;"
+        },
+        [
+          // 1. 是否拉黑 - 使用 ElSwitch
+          h(
+            "div",
+            {
+              style:
+                "display: flex; align-items: center; justify-content: space-between;"
+            },
+            [
+              h("span", { style: "font-weight: 500;" }, "是否拉黑"),
+              h(ElSwitch, {
+                modelValue: isBlack.value,
+                "onUpdate:modelValue": (val: boolean) => {
+                  isBlack.value = val;
+                },
+                activeText: "正常",
+                inactiveText: "拉黑"
+              })
+            ]
+          ),
+          // 2. 是否修改伞下用户 - 使用 ElRadioGroup
+          h(
+            "div",
+            { style: "display: flex; align-items: center; gap: 12px;" },
+            [
+              h(
+                "span",
+                { style: "font-weight: 500; white-space: nowrap;" },
+                "是否修改伞下用户"
+              ),
+
+              h(
+                ElRadioGroup,
+                {
+                  modelValue: updateChildren.value,
+                  "onUpdate:modelValue": (val: boolean) => {
+                    updateChildren.value = val;
+                  }
+                },
+                () => [
+                  h(ElRadio, { label: true }, () => "是"),
+                  h(ElRadio, { label: false }, () => "否")
+                ]
+              )
+            ]
+          )
+        ]
+      ),
+    showCancelButton: true,
+    beforeClose: async (action, instance, done) => {
+      console.log("isBlack==", isBlack.value);
+      if (action === "confirm") {
+        try {
+          instance.confirmButtonLoading = true;
+          await $Api.upStatus({
+            address,
+            status: isBlack.value,
+            isTeam: updateChildren.value // 是否同步修改伞下用户
+          });
+          message.success("修改成功");
+          _loadData();
+          done();
+        } catch (err: any) {
+          console.error("updateLevel error:", err);
+          message.error(err?.message || "修改失败");
+        } finally {
+          instance.confirmButtonLoading = false;
+        }
+      } else {
+        done();
+      }
+    }
+  });
+};
+
+const rowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px"
+};
+
+const labelStyle = {
+  width: "80px",
+  fontWeight: 500,
+  whiteSpace: "nowrap"
+};
+const handleAdminDeposit = async (row: any) => {
+  const calls = [
+    {
+      address: contractAddress.omniContract,
+      abi: omniABI.abi,
+      params: [0] // 自动插入下标
+    },
+    {
+      address: contractAddress.omniContract,
+      abi: omniABI.abi,
+      params: [1] // 自动插入下标
+    },
+    {
+      address: contractAddress.omniContract,
+      abi: omniABI.abi,
+      params: [2] // 自动插入下标
+    }
+  ];
+  const depositInfoResult = await fetch("depositInfo", calls);
+  const depositInfoData = depositInfoResult.data;
+  console.log("depositInfoData==", depositInfoData);
+  console.log("row.address==", row.address);
+  const selectValue = ref("");
+  const amount = ref("");
+  ElMessageBox({
+    title: "添加质押",
+    customClass: "my-message-box",
+    message: () =>
+      h(
+        "div",
+        {
+          style: {
+            width: "520px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px"
+          }
+        },
+        [
+          // 当前地址
+          h("div", rowStyle, [
+            h("span", labelStyle, "当前地址"),
+            h(ElInput, {
+              modelValue: row.address,
+              disabled: true,
+              style: { flex: 1 }
+            })
+          ]),
+
+          // 下拉选择
+          h("div", rowStyle, [
+            h("span", labelStyle, "类型"),
+            h(
+              ElSelect,
+              {
+                modelValue: selectValue.value,
+                "onUpdate:modelValue": (val: string) => {
+                  selectValue.value = val;
+                },
+                placeholder: "请选择类型",
+                style: { flex: 1 }
+              },
+              {
+                default: () =>
+                  pidSetOptions.map((item, index) =>
+                    h(ElOption, {
+                      label:
+                        item.label +
+                        "-" +
+                        "最少入金:" +
+                        fromWei(depositInfoData[index][0]),
+                      value: item.value,
+                      key: item.value
+                    })
+                  )
+              }
+            )
+          ]),
+
+          // 金额输入
+          h("div", rowStyle, [
+            h("span", labelStyle, "金额"),
+            h(ElInput, {
+              modelValue: amount.value,
+              "onUpdate:modelValue": (val: string) => {
+                amount.value = val;
+              },
+              placeholder: "请输入金额",
+              clearable: true,
+              style: { flex: 1 }
+            })
+          ])
+        ]
+      ),
+
+    showCancelButton: true,
+
+    beforeClose: async (action, instance, done) => {
+      if (action !== "confirm") return done();
+
+      const type = selectValue.value;
+      const amt = amount.value?.trim();
+      // 校验
+      if (type === "" || type === null || type === undefined) {
+        message.warning("请选择类型");
+        return;
+      }
+
+      if (!amt) {
+        message.warning("请输入金额");
+        return;
+      }
+
+      if (isNaN(Number(amt)) || Number(amt) <= 0) {
+        message.warning("请输入正确的金额");
+        return;
+      }
+      const amountIn = fromWei(depositInfoData[type][0]);
+      console.log("amountIn---", amountIn);
+      if (Number(amt) < Number(amountIn)) {
+        message.warning(`金额不能少于${amountIn}`);
+        return;
+      }
+      try {
+        instance.confirmButtonLoading = true;
+        const res = await callContractMethod(
+          contractAddress.omniContract,
+          omniABI.abi,
+          "adminDeposit",
+          [row.address, type, toWei(amt)],
+          true
+        );
+        message.success(res.msg || "添加质押成功");
+        _loadData();
+        done();
+      } catch (err: any) {
+        message.error(err?.message || "请求失败");
+        done();
+        _loadData();
+      } finally {
+        instance.confirmButtonLoading = false;
+      }
+    }
+  });
+};
 // 重置
 const _resetSearchForm = (data?) => (pageData.searchForm = data);
 // 获取分页参数
@@ -317,36 +661,6 @@ const _loadData = (page?: number) => {
       }
     })
     .finally(() => (pageData.tableParams.loading = false));
-};
-
-/**
- *
- * @param row row 更新上架 下架
- * @param newValue
- */
-const switchChange = async (row, newValue) => {
-  const actionText = newValue ? "正常" : "拉黑";
-
-  try {
-    await ElMessageBox.confirm(`确认要将用户${actionText}吗？`);
-
-    pageData.statusLoading = true;
-    const res = await $Api.upStatus({
-      id: row.id,
-      status: newValue
-    });
-
-    if (res.success) {
-      row.status = newValue;
-    } else {
-      ElMessage.error("失败");
-    }
-  } catch {
-    // 用户取消 → 什么都不做
-    row.status = !newValue;
-  } finally {
-    pageData.statusLoading = false;
-  }
 };
 // 分页切换
 const handleChangePageSize = (val: any) => {
@@ -404,8 +718,14 @@ onMounted(() => _loadData());
       @page-current-change="handleChangeCurrentPage"
       @page-size-change="handleChangePageSize"
     >
-       <template #levelScope="scope">
-        <span>{{ levelConvert(scope.row[scope.column.property]) }}</span>
+      <template #levelScope="scope">
+        <span>{{ userlevelConvert(scope.row[scope.column.property]) }}</span>
+      </template>
+      <template #isJoinScope="scope">
+        <span>{{ scope.row[scope.column.property] ? "是" : "否" }}</span>
+      </template>
+      <template #specialScope="scope">
+        <span>{{ scope.column.property ? "是" : "否" }}</span>
       </template>
       <template #teamPerfScope="scope">
         <span>{{ fromWei(scope.row[scope.column.property]) }}</span>
@@ -414,6 +734,7 @@ onMounted(() => _loadData());
         <el-switch
           v-model="row.status"
           size="large"
+          disabled
           :loading="pageData.statusLoading"
           @change="val => switchChange(row, val)"
           active-text="正常"
@@ -421,14 +742,38 @@ onMounted(() => _loadData());
         />
       </template>
       <template #operation="{ row }">
+        <el-link type="primary" @click="handleUpdateLevel(row)">
+          修改等级
+        </el-link>
         <el-link
           type="warning"
           style="margin-left: 14px"
-          @click="handleUpdateLevel(row)"
+          @click="handleUpdateStatus(row)"
         >
-          修改等级
+          是否拉黑
+        </el-link>
+        <el-link
+          type="info"
+          style="margin-left: 14px"
+          @click="handleUpdateLeader(row)"
+        >
+          修改上级
+        </el-link>
+
+        <el-link
+        v-if="row.isJoin==false"
+          type="danger"
+          style="margin-left: 14px"
+          @click="handleAdminDeposit(row)"
+        >
+          添加质押
         </el-link>
       </template>
     </pure-table>
   </el-card>
 </template>
+<style lang="scss">
+.my-message-box {
+  --el-messagebox-width: 550px !important;
+}
+</style>

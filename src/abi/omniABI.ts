@@ -123,6 +123,12 @@ export default {
           internalType: "uint256",
           name: "pid",
           type: "uint256"
+        },
+        {
+          indexed: false,
+          internalType: "bool",
+          name: "isAdmin",
+          type: "bool"
         }
       ],
       name: "Deposit",
@@ -161,6 +167,12 @@ export default {
           internalType: "uint256",
           name: "id",
           type: "uint256"
+        },
+        {
+          indexed: false,
+          internalType: "bool",
+          name: "isEnd",
+          type: "bool"
         }
       ],
       name: "Reward",
@@ -304,6 +316,29 @@ export default {
         }
       ],
       stateMutability: "view",
+      type: "function"
+    },
+    {
+      inputs: [
+        {
+          internalType: "address",
+          name: "to",
+          type: "address"
+        },
+        {
+          internalType: "uint256",
+          name: "pid",
+          type: "uint256"
+        },
+        {
+          internalType: "uint256",
+          name: "amount",
+          type: "uint256"
+        }
+      ],
+      name: "adminDeposit",
+      outputs: [],
+      stateMutability: "nonpayable",
       type: "function"
     },
     {
