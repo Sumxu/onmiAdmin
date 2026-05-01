@@ -39,6 +39,21 @@ const pageData: any = reactive({
       placeholder: "请输入钱包地址"
     },
     {
+      type: "radio",
+      label: "类型",
+      prop: "queryType",
+      default: 1,
+      dataSourceKey: "pledgeTypeOptions",
+      options: {
+        filterable: true,
+        keys: {
+          prop: "prop",
+          value: "value",
+          label: "label"
+        }
+      }
+    },
+    {
       type: "select",
       label: "状态",
       prop: "status",
@@ -53,6 +68,7 @@ const pageData: any = reactive({
         }
       }
     },
+    
     {
       type: "date",
       dateType: "datetimerange",
@@ -91,15 +107,14 @@ const pageData: any = reactive({
       {
         label: "投入额度",
         prop: "amount",
-        minWidth: "120px",
-        slot: "usdtScope"
+        minWidth: "120px"
       },
       {
         label: "结束额度",
         prop: "endIncome",
-        minWidth: "120px",
-        slot: "usdtScope"
+        minWidth: "120px"
       },
+      { label: "投入时间", prop: "startTime", minWidth: "120px" },
       { label: "产出时间", prop: "nextTime", minWidth: "120px" },
       { label: "产出利润", prop: "outIncome", minWidth: "120px" },
       { label: "投入时间", prop: "startTime", minWidth: "120px" },

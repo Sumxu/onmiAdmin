@@ -56,6 +56,21 @@ const pageData: any = reactive({
       placeholder: "请输入钱包地址"
     },
     {
+      type: "radio",
+      label: "类型",
+      prop: "queryType",
+      default: 1,
+      dataSourceKey: "pledgeTypeOptions",
+      options: {
+        filterable: true,
+        keys: {
+          prop: "prop",
+          value: "value",
+          label: "label"
+        }
+      }
+    },
+    {
       type: "input",
       label: "上级地址",
       prop: "parentAddress",
@@ -71,21 +86,6 @@ const pageData: any = reactive({
         filterable: true,
         keys: {
           prop: "value",
-          value: "value",
-          label: "label"
-        }
-      }
-    },
-    {
-      type: "radio",
-      label: "类型",
-      prop: "queryType",
-      default: 1,
-      dataSourceKey: "pledgeTypeOptions",
-      options: {
-        filterable: true,
-        keys: {
-          prop: "prop",
           value: "value",
           label: "label"
         }
@@ -761,7 +761,7 @@ onMounted(() => _loadData());
         </el-link>
 
         <el-link
-        v-if="row.isJoin==false"
+          v-if="row.isJoin == false"
           type="danger"
           style="margin-left: 14px"
           @click="handleAdminDeposit(row)"
