@@ -8,10 +8,12 @@ import message from "@/utils/message";
 import { fromWei, callContractMethod } from "@/utils/wallet";
 import { downloadExcel } from "@/utils/downloadExcel";
 import { ElMessage } from "element-plus";
+import { teamRewardTypeOption } from "@/constants/constants";
 import {
-  teamRewardTypeOption
-} from "@/constants/constants";
-import { levelConvert ,teamRewardTypeConvert, typeConvert} from "@/constants/convert";
+  levelConvert,
+  teamRewardTypeConvert,
+  typeConvert
+} from "@/constants/convert";
 import { contractAddress } from "@/config/contract";
 import { saveExcelFile } from "@/utils/file";
 import StatusTabs from "@/components/opts/status-tabs.vue";
@@ -55,7 +57,7 @@ const pageData: any = reactive({
     }
   ],
   dataSource: {
-    teamRewardTypeOption: teamRewardTypeOption,
+    teamRewardTypeOption: teamRewardTypeOption
   },
   permission: {
     query: ["defi:user:page"]
@@ -83,7 +85,7 @@ const pageData: any = reactive({
       {
         label: "层级",
         prop: "level",
-        minWidth: "120px",
+        minWidth: "120px"
       },
       {
         label: "数量",
@@ -242,9 +244,11 @@ onMounted(() => _loadData());
         <span>{{ levelConvert(scope.row[scope.column.property]) }}</span>
       </template>
       <template #typeScope="scope">
-        <span>{{ teamRewardTypeConvert(scope.row[scope.column.property]) }}</span>
+        <span>{{
+          teamRewardTypeConvert(scope.row[scope.column.property])
+        }}</span>
       </template>
-      
+
       <template #usdtScope="scope">
         <span>{{ fromWei(scope.row[scope.column.property]) }}</span>
       </template>

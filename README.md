@@ -118,6 +118,21 @@ cd vue-pure-admin
 
 pnpm install
 ```
+node  v22.18.0
+```
+### env.development VITE_API_SERVER 测试环境的请求地址 
+```
+### env.production VITE_API_SERVER 正式环境的请求地址 
+```
+### env.development VITE_API_SERVER 测试环境的请求地址 
+```
+### abi 是调用链上的abi方法 目前后端管理系统用的是omniABI.ts
+
+### 测试环境和正式的环境的合约地址在 src/config/contract.ts文件中
+### 用的是ethers6去链接钱包做查询和上链
+### 链上查询使用的是multiCall批量查询
+
+```
 
 ### 启动平台
 

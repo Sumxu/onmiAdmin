@@ -391,6 +391,11 @@ export default {
           internalType: "uint256",
           name: "joinUser",
           type: "uint256"
+        },
+        {
+          internalType: "uint256",
+          name: "maxAmount",
+          type: "uint256"
         }
       ],
       stateMutability: "view",
@@ -643,6 +648,41 @@ export default {
         }
       ],
       stateMutability: "view",
+      type: "function"
+    },
+    {
+      inputs: [
+        {
+          internalType: "uint256",
+          name: "pid",
+          type: "uint256"
+        },
+        {
+          components: [
+            {
+              internalType: "uint256",
+              name: "minAmount",
+              type: "uint256"
+            },
+            {
+              internalType: "uint256",
+              name: "joinUser",
+              type: "uint256"
+            },
+            {
+              internalType: "uint256",
+              name: "maxAmount",
+              type: "uint256"
+            }
+          ],
+          internalType: "struct Pool.DepositInfo",
+          name: "data",
+          type: "tuple"
+        }
+      ],
+      name: "updateDeposit",
+      outputs: [],
+      stateMutability: "nonpayable",
       type: "function"
     },
     {

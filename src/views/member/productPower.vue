@@ -66,8 +66,18 @@ const pageData: any = reactive({
         slot: "pidScope"
       },
       {
+        label: "参与人数",
+        prop: "joinUser",
+        slot: "joinUserScope"
+      },
+      {
         label: "最小入金",
-        prop: "price",
+        prop: "minPrice",
+        slot: "priceScope"
+      },
+      {
+        label: "最大入金",
+        prop: "maxPrice",
         slot: "priceScope"
       },
       {
@@ -88,18 +98,6 @@ const pageData: any = reactive({
     }
   }
 });
-
-// 搜索表单变化
-const _updateSearchFormData = (data: any) => (pageData.searchForm = data);
-// 查询
-const _searchForm = (data: any) => {
-  pageData.searchForm = data;
-  _loadData();
-};
-/**
- * 修改等级
- * @param row  当前行数据
- */
 const handleUpdateRate = (row: any) => {
   const rate = ref<string | number>(row.rate);
   const id = row.id;
@@ -163,6 +161,167 @@ const handleUpdateRate = (row: any) => {
     }
   });
 };
+// 搜索表单变化
+const _updateSearchFormData = (data: any) => (pageData.searchForm = data);
+// 查询
+const _searchForm = (data: any) => {
+  pageData.searchForm = data;
+  _loadData();
+};
+const handleUpdateAmount = (row: any) => {
+  const id = row.id;
+
+  const minAmount = ref(fromWei(row.minPrice));
+  const maxAmount = ref(fromWei(row.maxPrice));
+  const joinUser = ref(row.joinUser.toString());
+  // id 对应区间
+  const rangeMap: Record<number, [number, number]> = {
+    0: [100, 1000],
+    1: [1001, 3000],
+    2: [3001, 10000]
+  };
+
+  const currentRange = rangeMap[id];
+  if (!currentRange) {
+    message.warning("未知的档位ID");
+    return;
+  }
+
+  const [start, end] = currentRange;
+
+  ElMessageBox({
+    title: "修改收益率",
+    message: () =>
+      h(
+        "div",
+        {
+          style:
+            "width: 320px; display: flex; flex-direction: column; gap: 16px;"
+        },
+        [
+          // 日化收益（只读）
+          h("div", { style: "display: flex; align-items: center; gap: 8px;" }, [
+            h(
+              "span",
+              { style: "min-width: 80px; font-weight: 500;" },
+              "日化收益"
+            ),
+            h(ElInput, {
+              modelValue: pidScopeConvert(id),
+              disabled: true,
+              style: "flex: 1;"
+            })
+          ]),
+          h("div", { style: "display: flex; align-items: center; gap: 8px;" }, [
+            h(
+              "span",
+              { style: "min-width: 80px; font-weight: 500;" },
+              "参与人数"
+            ),
+            h(ElInput, {
+              modelValue: joinUser.value,
+              "onUpdate:modelValue": val => (joinUser.value = val),
+              placeholder: `请输入`,
+              type: "string",
+              style: "flex: 1;",
+              clearable: true
+            })
+          ]),
+          // 最小入金
+          h("div", { style: "display: flex; align-items: center; gap: 8px;" }, [
+            h(
+              "span",
+              { style: "min-width: 80px; font-weight: 500;" },
+              "最小入金"
+            ),
+            h(ElInput, {
+              modelValue: minAmount.value,
+              "onUpdate:modelValue": val => (minAmount.value = val),
+              placeholder: `建议 ${start}`,
+              type: "string",
+              style: "flex: 1;",
+              clearable: true
+            })
+          ]),
+
+          // 最大入金
+          h("div", { style: "display: flex; align-items: center; gap: 8px;" }, [
+            h(
+              "span",
+              { style: "min-width: 80px; font-weight: 500;" },
+              "最大入金"
+            ),
+            h(ElInput, {
+              modelValue: maxAmount.value,
+              "onUpdate:modelValue": val => (maxAmount.value = val),
+              placeholder: `建议 ${end}`,
+              type: "string",
+              style: "flex: 1;",
+              clearable: true
+            })
+          ]),
+
+          // 提示
+          h(
+            "div",
+            { style: "font-size: 12px; color: #999;" },
+            `当前档位金额范围只能设置为：${start} ~ ${end}`
+          )
+        ]
+      ),
+
+    showCancelButton: true,
+
+    beforeClose: async (action, instance, done) => {
+      if (action === "confirm") {
+        try {
+          instance.confirmButtonLoading = true;
+
+          const min = Number(Number(minAmount.value).toFixed(0));
+          const max = Number(Number(maxAmount.value).toFixed(0));
+          const joinUserNum = joinUser.value;
+
+          if (isNaN(min) || isNaN(max) || isNaN(joinUserNum)) {
+            message.warning("请输入有效的数字");
+            return;
+          }
+
+          if (min >= max) {
+            message.warning("最小入金必须小于最大入金");
+            return;
+          }
+          if (start > min) {
+            message.warning(`当前档位金额范围只能设置为：${start} ~ ${end}`);
+            return;
+          }
+          if (end > max) {
+            message.warning(`当前档位金额范围只能设置为：${start} ~ ${end}`);
+            return;
+          }
+          // ====================================================
+          await callContractMethod(
+            contractAddress.omniContract,
+            omniABI.abi,
+            "updateDeposit",
+            [id, [toWei(min), joinUserNum, toWei(max)]],
+            true
+          );
+
+          message.success("修改成功");
+          _loadData();
+          done();
+        } catch (err: any) {
+          console.error("update error:", err);
+          message.error(err?.message || "请求出错");
+        } finally {
+          instance.confirmButtonLoading = false;
+        }
+      } else {
+        done();
+      }
+    }
+  });
+};
 // 重置
 const _resetSearchForm = (data?) => (pageData.searchForm = data);
 // 获取分页参数
@@ -178,17 +337,23 @@ const _loadData = async (page?: number) => {
     {
       id: 0,
       rate: 0,
-      price: 0n
+      minPrice: 0n,
+      joinUser: 0n,
+      maxPrice: 0n
     },
     {
       id: 1,
       rate: 0,
-      price: 0n
+      minPrice: 0n,
+      joinUser: 0n,
+      maxPrice: 0n
     },
     {
       id: 2,
       rate: 0,
-      price: 0n
+      joinUser: 0n,
+      minPrice: 0n,
+      maxPrice: 0n
     }
   ];
   const calls = [
@@ -210,8 +375,11 @@ const _loadData = async (page?: number) => {
   ];
   const depositInfoResult = await fetch("depositInfo", calls);
   const depositInfoData = depositInfoResult.data;
+  console.log("depositInfoData==", depositInfoData);
   depositArr.map((item, index) => {
-    item.price = depositInfoData[index][0];
+    item.minPrice = depositInfoData[index][0];
+    item.joinUser = depositInfoData[index][1];
+    item.maxPrice = depositInfoData[index][2];
   });
   pageData.tableParams.list = [];
   pageData.tableParams.loading = true;
@@ -290,6 +458,9 @@ onMounted(() => _loadData());
       @page-current-change="handleChangeCurrentPage"
       @page-size-change="handleChangePageSize"
     >
+      <template #joinUserScope="scope">
+        <span>{{ scope.row[scope.column.property].toString() }}</span>
+      </template>
       <template #pidScope="scope">
         <span>{{ pidScopeConvert(scope.row[scope.column.property]) }}</span>
       </template>
@@ -304,6 +475,13 @@ onMounted(() => _loadData());
           @click="handleUpdateRate(row)"
         >
           修改收益率
+        </el-link>
+        <el-link
+          type="warning"
+          style="margin-left: 14px"
+          @click="handleUpdateAmount(row)"
+        >
+          修改信息
         </el-link>
       </template>
     </pure-table>

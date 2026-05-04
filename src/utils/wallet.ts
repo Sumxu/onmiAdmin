@@ -36,18 +36,28 @@ export function isValidAddress(addr?: string): boolean {
 export function fromWei(
   value: string | number | bigint,
   decimals = 18,
-  fixed = true
+  fixedDecimals?: number // 新增：控制显示的小数位数，传入 0 则显示整数
 ): string {
   if (value === undefined || value === null) return "0";
+
   try {
     const etherValue = ethers.formatUnits(value.toString(), decimals);
-    return fixed ? Number(etherValue).toFixed(4) : etherValue;
+
+    // 如果传入了 fixedDecimals，则使用指定的小数位数
+    if (fixedDecimals !== undefined) {
+      if (fixedDecimals === 0) {
+        return Math.floor(Number(etherValue)).toString(); // 整数，不显示小数点
+      }
+      return Number(etherValue).toFixed(fixedDecimals);
+    }
+
+    // 兼容旧逻辑：默认保留 4 位小数
+    return Number(etherValue).toFixed(4);
   } catch (error) {
     console.error("fromWei 转换失败:", error);
     return "0";
   }
 }
-
 /**
  * 将 Ether 或代币单位转换为最小单位（wei）
  * @param value 要转换的值，可以是 string | number | BigInt
